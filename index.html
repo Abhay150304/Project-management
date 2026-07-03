@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProFlow — Project Management System</title>
+  <meta name="description" content="ProFlow is a powerful project management system with task management, team collaboration, analytics, and real-time activity tracking." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR OVERLAY ══════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════ SIDEBAR ══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚡</div>
+    <span class="logo-text">ProFlow</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Main</span>
+    <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">
+      <span class="nav-icon">🏠</span> Dashboard
+    </button>
+    <button class="nav-item" id="nav-tasks" onclick="navigate('tasks')">
+      <span class="nav-icon">✅</span> Task Board
+      <span class="nav-badge" id="badge-tasks">0</span>
+    </button>
+    <button class="nav-item" id="nav-calendar" onclick="navigate('calendar')">
+      <span class="nav-icon">📅</span> Calendar
+    </button>
+
+    <span class="nav-section-label">Insights</span>
+    <button class="nav-item" id="nav-analytics" onclick="navigate('analytics')">
+      <span class="nav-icon">📊</span> Analytics
+    </button>
+    <button class="nav-item" id="nav-activity" onclick="navigate('activity')">
+      <span class="nav-icon">⏱️</span> Activity Log
+      <span class="nav-badge" id="badge-activity" style="background:var(--cyan)">Live</span>
+    </button>
+
+    <span class="nav-section-label">Team</span>
+    <button class="nav-item" id="nav-users" onclick="navigate('users')">
+      <span class="nav-icon">👥</span> Team Members
+    </button>
+
+    <div class="divider"></div>
+
+    <span class="nav-section-label">Settings</span>
+    <button class="nav-item" onclick="openSettings()">
+      <span class="nav-icon">⚙️</span> Settings
+    </button>
+    <button class="nav-item" onclick="clearStorage()" style="color:var(--rose)">
+      <span class="nav-icon">🔄</span> Reset Data
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-profile-mini" onclick="navigate('users')">
+      <div class="avatar" id="sidebar-avatar" style="background: linear-gradient(135deg,#7c3aed,#06b6d4)">AK</div>
+      <div class="user-info-mini">
+        <div class="user-name-mini">Abhay Kumar</div>
+        <div class="user-role-mini">Project Manager</div>
+      </div>
+      <span style="color:var(--text-muted);font-size:14px">›</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN CONTENT ══════════════════ -->
+<div class="main-content">
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()" id="hamburger" aria-label="Toggle sidebar">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="globalSearch" placeholder="Search tasks, members…" oninput="handleSearch(this.value)" />
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn-icon notif-indicator" data-tooltip="Notifications" onclick="showToast('🔔 3 new notifications', 'info')" aria-label="Notifications">🔔</button>
+      <button class="btn-icon" data-tooltip="Toggle Theme" onclick="toggleTheme()" aria-label="Toggle dark/light mode" id="themeBtn">🌙</button>
+      <button class="btn btn-primary btn-sm" onclick="openAddTaskModal()">+ New Task</button>
+    </div>
+  </header>
+
+  <!-- ── PAGES ── -->
+  <main class="page-content">
+
+    <!-- ════════════ DASHBOARD PAGE ════════════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-hero">
+        <div class="page-hero-content">
+          <h1>Good morning, Abhay! 👋</h1>
+          <p id="heroSubtitle">Here's what's happening with your projects today.</p>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-grid" id="dashStatsGrid">
+        <div class="stat-card" style="--stat-color:var(--accent)">
+          <div class="stat-icon" style="background:rgba(124,58,237,0.2);color:var(--accent-light)">📁</div>
+          <div class="stat-value count-anim" id="stat-projects">0</div>
+          <div class="stat-label">Active Projects</div>
+          <div class="stat-change up">▲ 2 this week</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--cyan)">
+          <div class="stat-icon" style="background:rgba(6,182,212,0.2);color:var(--cyan)">✅</div>
+          <div class="stat-value count-anim" id="stat-tasks">0</div>
+          <div class="stat-label">Total Tasks</div>
+          <div class="stat-change up">▲ 8 this week</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--emerald)">
+          <div class="stat-icon" style="background:rgba(16,185,129,0.2);color:var(--emerald)">🏆</div>
+          <div class="stat-value count-anim" id="stat-done">0</div>
+          <div class="stat-label">Completed</div>
+          <div class="stat-change up">▲ 12 this month</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--amber)">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.2);color:var(--amber)">⏰</div>
+          <div class="stat-value count-anim" id="stat-overdue">0</div>
+          <div class="stat-label">Overdue</div>
+          <div class="stat-change down">▼ 3 from last week</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--indigo)">
+          <div class="stat-icon" style="background:rgba(99,102,241,0.2);color:var(--indigo)">👥</div>
+          <div class="stat-value count-anim" id="stat-members">0</div>
+          <div class="stat-label">Team Members</div>
+          <div class="stat-change up">▲ 1 new</div>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid-main-side">
+        <!-- Left: Projects + Activity -->
+        <div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+              <span class="card-title">🗂️ Active Projects</span>
+              <button class="btn btn-secondary btn-sm" onclick="openAddProjectModal()">+ New</button>
+            </div>
+            <div class="project-list" id="projectList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⏱️ Today's Minute Tracker</span>
+              <span style="font-size:0.75rem;color:var(--text-muted)" id="minuteLabel">Activity this session</span>
+            </div>
+            <div class="minute-grid" id="minuteGrid"></div>
+            <div style="display:flex;gap:16px;margin-top:12px;font-size:0.72rem;color:var(--text-muted)">
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px"></span>High</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--cyan);border-radius:2px;margin-right:4px"></span>Medium</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:rgba(124,58,237,0.3);border-radius:2px;margin-right:4px"></span>Low</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:var(--bg-input);border-radius:2px;margin-right:4px"></span>Idle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div>
+          <!-- Live Clock -->
+          <div class="live-clock" style="margin-bottom:16px">
+            <div class="clock-time" id="liveClock">00:00:00</div>
+            <div class="clock-date" id="liveDate"></div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header">
+              <span class="card-title">📡 Live Activity</span>
+              <span class="tag tag-green" style="font-size:0.65rem">● LIVE</span>
+            </div>
+            <div class="activity-feed" id="activityFeed"></div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📈 This Week</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                  <span>Tasks Completed</span><span style="color:var(--emerald);font-weight:700">72%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                  <span>Hours Logged</span><span style="color:var(--cyan);font-weight:700">85%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:85%;background:linear-gradient(90deg,var(--cyan),var(--indigo))"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+                  <span>Team Velocity</span><span style="color:var(--amber);font-weight:700">61%</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width:61%;background:linear-gradient(90deg,var(--amber),var(--rose))"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ TASKS PAGE ════════════ -->
+    <section class="page" id="page-tasks">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Task Board</div>
+          <div class="section-subtitle">Drag and drop to update task status</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="filter-tabs" id="taskFilter">
+            <button class="filter-tab active" onclick="filterTasks('all', this)">All</button>
+            <button class="filter-tab" onclick="filterTasks('high', this)">🔴 High</button>
+            <button class="filter-tab" onclick="filterTasks('medium', this)">🟡 Medium</button>
+            <button class="filter-tab" onclick="filterTasks('low', this)">🟢 Low</button>
+          </div>
+          <button class="btn btn-primary" onclick="openAddTaskModal()">+ Add Task</button>
+        </div>
+      </div>
+
+      <div class="hscroll">
+        <div class="kanban-board" id="kanbanBoard" style="min-width:900px">
+          <div class="kanban-col" id="col-todo" ondragover="allowDrop(event)" ondrop="dropTask(event,'todo')">
+            <div class="kanban-col-header">
+              <div class="col-indicator" style="background:#64748b"></div>
+              <span class="col-title">To Do</span>
+              <span class="col-count" id="count-todo">0</span>
+            </div>
+            <div id="tasks-todo"></div>
+          </div>
+          <div class="kanban-col" id="col-inprogress" ondragover="allowDrop(event)" ondrop="dropTask(event,'inprogress')">
+            <div class="kanban-col-header">
+              <div class="col-indicator" style="background:#f59e0b"></div>
+              <span class="col-title">In Progress</span>
+              <span class="col-count" id="count-inprogress">0</span>
+            </div>
+            <div id="tasks-inprogress"></div>
+          </div>
+          <div class="kanban-col" id="col-review" ondragover="allowDrop(event)" ondrop="dropTask(event,'review')">
+            <div class="kanban-col-header">
+              <div class="col-indicator" style="background:#6366f1"></div>
+              <span class="col-title">Review</span>
+              <span class="col-count" id="count-review">0</span>
+            </div>
+            <div id="tasks-review"></div>
+          </div>
+          <div class="kanban-col" id="col-done" ondragover="allowDrop(event)" ondrop="dropTask(event,'done')">
+            <div class="kanban-col-header">
+              <div class="col-indicator" style="background:#10b981"></div>
+              <span class="col-title">Done</span>
+              <span class="col-count" id="count-done">0</span>
+            </div>
+            <div id="tasks-done"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Table View -->
+      <div class="card" style="margin-top:24px">
+        <div class="card-header">
+          <span class="card-title">📋 All Tasks List</span>
+        </div>
+        <div class="table-container">
+          <table id="tasksTable">
+            <thead>
+              <tr>
+                <th>Task</th><th>Project</th><th>Assignee</th><th>Priority</th><th>Status</th><th>Due Date</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasksTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ CALENDAR PAGE ════════════ -->
+    <section class="page" id="page-calendar">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Calendar</div>
+          <div class="section-subtitle">View deadlines, events, and scheduled tasks</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddEventModal()">+ Add Event</button>
+      </div>
+
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="calendar-nav">
+            <button class="btn-icon" onclick="changeMonth(-1)">‹</button>
+            <span class="calendar-month" id="calendarMonth">July 2026</span>
+            <button class="btn-icon" onclick="changeMonth(1)">›</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header">
+              <span class="card-title" id="selectedDateTitle">📅 Today's Events</span>
+            </div>
+            <div id="dayEventsList" style="display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">📌 Upcoming Deadlines</span></div>
+            <div id="upcomingDeadlines" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ ANALYTICS PAGE ════════════ -->
+    <section class="page" id="page-analytics">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Analytics</div>
+          <div class="section-subtitle">Productivity metrics and project insights</div>
+        </div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="setAnalyticsPeriod('week', this)">Week</button>
+          <button class="filter-tab" onclick="setAnalyticsPeriod('month', this)">Month</button>
+          <button class="filter-tab" onclick="setAnalyticsPeriod('quarter', this)">Quarter</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" style="--stat-color:var(--emerald)">
+          <div class="stat-icon" style="background:rgba(16,185,129,0.2);color:var(--emerald)">📈</div>
+          <div class="stat-value" id="an-velocity">87</div>
+          <div class="stat-label">Team Velocity</div>
+          <div class="stat-change up">▲ 14% vs last period</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--accent)">
+          <div class="stat-icon" style="background:rgba(124,58,237,0.2);color:var(--accent)">⏱️</div>
+          <div class="stat-value" id="an-hours">248</div>
+          <div class="stat-label">Hours Logged</div>
+          <div class="stat-change up">▲ 6% vs last period</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--cyan)">
+          <div class="stat-icon" style="background:rgba(6,182,212,0.2);color:var(--cyan)">🎯</div>
+          <div class="stat-value" id="an-completion">94%</div>
+          <div class="stat-label">On-time Completion</div>
+          <div class="stat-change up">▲ 3% vs last period</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--amber)">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.2);color:var(--amber)">🐛</div>
+          <div class="stat-value" id="an-bugs">12</div>
+          <div class="stat-label">Bugs Resolved</div>
+          <div class="stat-change down">▼ 2 pending</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📊 Task Completion by Week</span></div>
+          <div class="chart-container"><canvas id="barChart" height="200"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🍩 Tasks by Status</span></div>
+          <div class="chart-container" style="display:flex;align-items:center;justify-content:center">
+            <canvas id="doughnutChart" height="200" style="max-height:200px"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📉 Burndown Chart</span></div>
+          <div class="chart-container"><canvas id="lineChart" height="200"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">👤 Member Productivity</span></div>
+          <div class="chart-container"><canvas id="memberChart" height="200"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ ACTIVITY LOG PAGE ════════════ -->
+    <section class="page" id="page-activity">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Activity Log</div>
+          <div class="section-subtitle" id="activitySubtitle">Real-time log of every action performed</div>
+        </div>
+        <button class="btn btn-secondary" onclick="clearActivity()">🗑️ Clear Log</button>
+      </div>
+
+      <div class="grid-main-side">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⏱️ Minute-by-Minute Log</span>
+            <span class="tag tag-green" style="font-size:0.65rem">● LIVE</span>
+          </div>
+          <div class="timeline" id="fullTimeline" style="max-height:600px;overflow-y:auto;padding-right:8px"></div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><span class="card-title">📊 Activity Heatmap</span></div>
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px">Activity intensity per minute (last 60 min)</p>
+            <div class="minute-grid" id="activityHeatmap"></div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><span class="card-title">📋 Session Summary</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px" id="sessionSummary">
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem">
+                <span style="color:var(--text-secondary)">Session Start</span>
+                <span id="sessionStart" style="font-weight:600">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem">
+                <span style="color:var(--text-secondary)">Actions Taken</span>
+                <span id="actionsCount" style="font-weight:600;color:var(--accent-light)">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem">
+                <span style="color:var(--text-secondary)">Tasks Created</span>
+                <span id="tasksCreated" style="font-weight:600;color:var(--cyan)">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.85rem">
+                <span style="color:var(--text-secondary)">Tasks Moved</span>
+                <span id="tasksMoved" style="font-weight:600;color:var(--emerald)">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">🔥 Most Active Hours</span></div>
+            <div id="activeHoursChart" style="display:flex;gap:4px;align-items:flex-end;height:80px;margin-top:8px"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.65rem;color:var(--text-muted)">
+              <span>9am</span><span>12pm</span><span>3pm</span><span>6pm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ USERS PAGE ════════════ -->
+    <section class="page" id="page-users">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Team Members</div>
+          <div class="section-subtitle">Manage your project team and roles</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddUserModal()">+ Add Member</button>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-card" style="--stat-color:var(--emerald)">
+          <div class="stat-icon" style="background:rgba(16,185,129,0.2);color:var(--emerald)">🟢</div>
+          <div class="stat-value" id="count-online">0</div>
+          <div class="stat-label">Online Now</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--amber)">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.2);color:var(--amber)">🟡</div>
+          <div class="stat-value" id="count-away">0</div>
+          <div class="stat-label">Away</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--text-muted)">
+          <div class="stat-icon" style="background:rgba(100,116,139,0.2);color:var(--text-muted)">⚫</div>
+          <div class="stat-value" id="count-offline">0</div>
+          <div class="stat-label">Offline</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--accent)">
+          <div class="stat-icon" style="background:rgba(124,58,237,0.2);color:var(--accent)">👑</div>
+          <div class="stat-value" id="count-admins">0</div>
+          <div class="stat-label">Admins</div>
+        </div>
+      </div>
+
+      <div class="users-grid" id="usersGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════ MODALS ══════════════════════ -->
+
+<!-- Add Task Modal -->
+<div class="modal-overlay" id="addTaskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">➕ New Task</span>
+      <button class="btn-icon" onclick="closeModal('addTaskModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="taskTitle">Task Title</label>
+      <input class="form-input" type="text" id="taskTitle" placeholder="Enter task title…" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="taskDesc">Description</label>
+      <textarea class="form-input" id="taskDesc" rows="3" placeholder="Task description…" style="resize:vertical"></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="taskPriority">Priority</label>
+        <select class="form-input" id="taskPriority">
+          <option value="high">🔴 High</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="taskProject">Project</label>
+        <select class="form-input" id="taskProject"></select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="taskDue">Due Date</label>
+        <input class="form-input" type="date" id="taskDue" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="taskAssignee">Assignee</label>
+        <select class="form-input" id="taskAssignee"></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('addTaskModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Edit Task Modal ─── -->
+<div class="modal-overlay" id="editTaskModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Task</span>
+      <button class="btn-icon" onclick="closeModal('editTaskModal')">✕</button>
+    </div>
+    <input type="hidden" id="editTaskId" />
+    <div class="form-group">
+      <label class="form-label" for="editTaskTitle">Task Title</label>
+      <input class="form-input" type="text" id="editTaskTitle" placeholder="Enter task title…" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="editTaskDesc">Description</label>
+      <textarea class="form-input" id="editTaskDesc" rows="3" placeholder="Task description…" style="resize:vertical"></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="editTaskPriority">Priority</label>
+        <select class="form-input" id="editTaskPriority">
+          <option value="high">🔴 High</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editTaskStatus">Status</label>
+        <select class="form-input" id="editTaskStatus">
+          <option value="todo">📋 To Do</option>
+          <option value="inprogress">⚡ In Progress</option>
+          <option value="review">🔍 Review</option>
+          <option value="done">✅ Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="editTaskProject">Project</label>
+        <select class="form-input" id="editTaskProject"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="editTaskAssignee">Assignee</label>
+        <select class="form-input" id="editTaskAssignee"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="editTaskDue">Due Date</label>
+      <input class="form-input" type="date" id="editTaskDue" />
+    </div>
+    <div style="display:flex;gap:10px;justify-content:space-between;margin-top:8px;flex-wrap:wrap">
+      <button class="btn btn-danger" id="editDeleteBtn" onclick="deleteTaskFromModal()">🗑️ Delete Task</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="closeModal('editTaskModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEditTask()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Task Detail View Modal ─── -->
+<div class="modal-overlay" id="viewTaskModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="viewTaskTitle">Task Details</span>
+      <button class="btn-icon" onclick="closeModal('viewTaskModal')">✕</button>
+    </div>
+    <div id="viewTaskBody"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-secondary" onclick="closeModal('viewTaskModal')">Close</button>
+      <button class="btn btn-primary" id="viewEditBtn" onclick="switchToEdit()">✏️ Edit Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">👤 Add Team Member</span>
+      <button class="btn-icon" onclick="closeModal('addUserModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="newUserName">Full Name</label>
+      <input class="form-input" type="text" id="newUserName" placeholder="John Doe" />
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="newUserRole">Role</label>
+        <select class="form-input" id="newUserRole">
+          <option>Project Manager</option>
+          <option>Developer</option>
+          <option>Designer</option>
+          <option>QA Engineer</option>
+          <option>DevOps</option>
+          <option>Analyst</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newUserDept">Department</label>
+        <input class="form-input" type="text" id="newUserDept" placeholder="Engineering" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="newUserEmail">Email</label>
+      <input class="form-input" type="email" id="newUserEmail" placeholder="john@company.com" />
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitUser()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal-overlay" id="addEventModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📅 Add Event</span>
+      <button class="btn-icon" onclick="closeModal('addEventModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="eventTitle">Event Title</label>
+      <input class="form-input" type="text" id="eventTitle" placeholder="Sprint Review…" />
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="eventDate">Date</label>
+        <input class="form-input" type="date" id="eventDate" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="eventType">Type</label>
+        <select class="form-input" id="eventType">
+          <option>Meeting</option>
+          <option>Deadline</option>
+          <option>Review</option>
+          <option>Release</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('addEventModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEvent()">Add Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="addProjectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📁 New Project</span>
+      <button class="btn-icon" onclick="closeModal('addProjectModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="projectName">Project Name</label>
+      <input class="form-input" type="text" id="projectName" placeholder="Project name…" />
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="projectColor">Color</label>
+        <input class="form-input" type="color" id="projectColor" value="#7c3aed" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="projectDeadline">Deadline</label>
+        <input class="form-input" type="date" id="projectDeadline" />
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-secondary" onclick="closeModal('addProjectModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

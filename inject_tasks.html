@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>ProFlow — Add Projects</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:monospace;background:#070b14;color:#f0f4ff;padding:40px 30px;min-height:100vh}
+h2{font-size:1.4rem;font-weight:800;background:linear-gradient(90deg,#a78bfa,#67e8f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+p{color:#8b9cc8;font-family:sans-serif;font-size:14px;margin-bottom:24px}
+pre{background:#0d1117;border:1px solid #1e2433;border-radius:10px;padding:16px;white-space:pre-wrap;font-size:12.5px;max-height:420px;overflow-y:auto;margin-bottom:20px;line-height:1.7}
+.ok  {color:#10b981}
+.info{color:#06b6d4}
+.warn{color:#f59e0b}
+.err {color:#f43f5e}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+button{border:none;padding:11px 22px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;font-family:sans-serif;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#06b6d4);color:white;box-shadow:0 4px 16px rgba(124,58,237,0.35)}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(124,58,237,0.5);transform:translateY(-1px)}
+.btn-back{background:rgba(6,182,212,0.15);color:#67e8f9;border:1px solid rgba(6,182,212,0.3)}
+.btn-back:hover{background:rgba(6,182,212,0.25)}
+.project-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px 10px;font-size:12px;margin:3px}
+</style>
+</head>
+<body>
+
+<h2>⚡ ProFlow — Add New Projects</h2>
+<p>Adds <strong>Weather Forecast App</strong> and <strong>Data Viz Dashboard</strong> as projects with tasks into your ProFlow data.</p>
+
+<div style="margin-bottom:20px;font-family:sans-serif">
+  <div style="font-size:13px;color:#8b9cc8;margin-bottom:10px">Projects to be added:</div>
+  <span class="project-badge"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#06b6d4"></span> Weather Forecast App · 6 tasks · Due Jul 25</span>
+  <span class="project-badge"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b"></span> Data Viz Dashboard · 6 tasks · Due Aug 10</span>
+</div>
+
+<pre id="log">Click "Add Projects" to begin…</pre>
+
+<div class="actions">
+  <button class="btn-primary" onclick="inject()">▶ Add Projects to ProFlow</button>
+  <button class="btn-back" onclick="location.href='index.html'">← Back to ProFlow</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'proflow_v1';
+
+function log(msg, type) {
+  var el = document.getElementById('log');
+  el.innerHTML += '<span class="' + (type||'ok') + '">' + msg + '</span>\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function inject() {
+  document.getElementById('log').innerHTML = '';
+
+  var raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    log('WARNING: ProFlow data not found in localStorage.', 'warn');
+    log('Please open index.html first (so ProFlow initialises), then come back here.', 'warn');
+    return;
+  }
+
+  var state;
+  try { state = JSON.parse(raw); }
+  catch(e) { log('ERROR: Could not parse ProFlow data: ' + e.message, 'err'); return; }
+
+  // ── Projects ─────────────────────────────────────────────────
+  var existingNames = state.projects.map(function(p){ return p.name; });
+  var nextProjId = state.nextProjectId || (state.projects.length + 1);
+  var projIdW = null, projIdD = null;
+  var projsAdded = 0;
+
+  if (!existingNames.includes('Weather Forecast App')) {
+    projIdW = nextProjId++;
+    state.projects.push({ id: projIdW, name: 'Weather Forecast App', color: '#06b6d4', deadline: '2026-07-25', progress: 30 });
+    log('✓ Project added: Weather Forecast App  (id ' + projIdW + ')');
+    projsAdded++;
+  } else {
+    projIdW = state.projects.find(function(p){ return p.name === 'Weather Forecast App'; }).id;
+    log('— Project already exists: Weather Forecast App  (id ' + projIdW + ')', 'info');
+  }
+
+  if (!existingNames.includes('Data Viz Dashboard')) {
+    projIdD = nextProjId++;
+    state.projects.push({ id: projIdD, name: 'Data Viz Dashboard', color: '#f59e0b', deadline: '2026-08-10', progress: 15 });
+    log('✓ Project added: Data Viz Dashboard  (id ' + projIdD + ')');
+    projsAdded++;
+  } else {
+    projIdD = state.projects.find(function(p){ return p.name === 'Data Viz Dashboard'; }).id;
+    log('— Project already exists: Data Viz Dashboard  (id ' + projIdD + ')', 'info');
+  }
+
+  state.nextProjectId = nextProjId;
+
+  // ── Tasks ─────────────────────────────────────────────────────
+  var existingTitles = state.tasks.map(function(t){ return t.title; });
+  var nextId = state.nextTaskId || (state.tasks.length + 1);
+  var u1 = state.users[0] ? state.users[0].id : 1;
+  var u2 = state.users[1] ? state.users[1].id : 2;
+  var u3 = state.users[2] ? state.users[2].id : 3;
+
+  var weatherTasks = [
+    { title:'Current weather API integration',  desc:'Fetch live temperature, humidity, wind speed, pressure from Open-Meteo API. Auto-refresh every 60 seconds with animated countdown timer.', priority:'high',   status:'inprogress', project:projIdW, assignee:u2, due:'2026-07-10' },
+    { title:'7-day forecast cards UI',           desc:'Horizontal scrollable row of daily forecast cards. Each card shows day name, weather emoji, high/low temps, precipitation bar. Highlight today card.', priority:'high', status:'todo', project:projIdW, assignee:u3, due:'2026-07-12' },
+    { title:'City search with geocoding',        desc:'Search bar with live autocomplete using Open-Meteo Geocoding API. Show city + country in dropdown. Save last city to localStorage.', priority:'medium', status:'todo', project:projIdW, assignee:u2, due:'2026-07-14' },
+    { title:'Loading indicators & skeleton UI',  desc:'Full-screen loader on initial load. Shimmer skeleton on weather cards during data fetch. Spinner during city geocoding.', priority:'medium', status:'done', project:projIdW, assignee:u3, due:'2026-07-08' },
+    { title:'Temperature trend chart',           desc:'Chart.js line chart showing 7-day max/min temperature with purple gradient fill. Dark theme. Responsive.', priority:'low', status:'review', project:projIdW, assignee:u1, due:'2026-07-16' },
+    { title:'Mobile responsive weather layout',  desc:'All weather cards, forecast row and chart work on 320px+ screens. Touch scrolling on forecast strip.', priority:'low', status:'todo', project:projIdW, assignee:u3, due:'2026-07-18' },
+  ];
+
+  var dashTasks = [
+    { title:'KPI overview stat cards',              desc:'6 animated KPI cards: Total Revenue, Monthly Growth, Active Users, Conversion Rate, Avg Order Value, Customer Satisfaction. Counter animation on page load.', priority:'high', status:'done', project:projIdD, assignee:u1, due:'2026-07-11' },
+    { title:'Revenue & user growth charts',         desc:'Monthly Revenue line chart (Jan–Dec) and User Growth area chart using Chart.js with dark-theme gradient fills. Fully responsive.', priority:'high', status:'inprogress', project:projIdD, assignee:u2, due:'2026-07-15' },
+    { title:'Sales transactions report table',      desc:'Sortable 20-row transactions table: ID, Date, Product, Category, Amount, Status, Region. Search, status filter, and 10-row pagination.', priority:'high', status:'inprogress', project:projIdD, assignee:u3, due:'2026-07-17' },
+    { title:'Statistics heatmap & regional chart',  desc:'GitHub-style 7×24 activity heatmap. Horizontal bar chart for 5 regions. Top 5 products table with progress bars. Key metric cards.', priority:'medium', status:'todo', project:projIdD, assignee:u1, due:'2026-07-20' },
+    { title:'Export CSV, JSON and PDF/Print',       desc:'Export report table as downloadable CSV and JSON files. PDF export via browser print with print-specific CSS. Log last 5 exports in localStorage.', priority:'medium', status:'todo', project:projIdD, assignee:u2, due:'2026-07-22' },
+    { title:'Dark/light mode toggle',               desc:'Theme toggle with localStorage persistence. All Chart.js charts rerender with correct colors on theme switch.', priority:'low', status:'review', project:projIdD, assignee:u3, due:'2026-07-19' },
+  ];
+
+  var allNewTasks = weatherTasks.concat(dashTasks);
+  var tasksAdded = 0;
+
+  log('\n── Weather Forecast App Tasks ──────────────────', 'info');
+  var wCount = 0;
+  weatherTasks.forEach(function(t) {
+    if (!existingTitles.includes(t.title)) {
+      state.tasks.push(Object.assign({ id: nextId++ }, t));
+      log('  ✓ ' + t.title);
+      tasksAdded++; wCount++;
+    } else {
+      log('  — Skipped (exists): ' + t.title, 'info');
+    }
+  });
+
+  log('\n── Data Viz Dashboard Tasks ────────────────────', 'info');
+  var dCount = 0;
+  dashTasks.forEach(function(t) {
+    if (!existingTitles.includes(t.title)) {
+      state.tasks.push(Object.assign({ id: nextId++ }, t));
+      log('  ✓ ' + t.title);
+      tasksAdded++; dCount++;
+    } else {
+      log('  — Skipped (exists): ' + t.title, 'info');
+    }
+  });
+
+  state.nextTaskId = nextId;
+
+  // ── Save ──────────────────────────────────────────────────────
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+  log('\n══════════════════════════════════════════════════');
+  log('✅ Done! Added ' + projsAdded + ' project(s) and ' + tasksAdded + ' task(s) to ProFlow.');
+  if (tasksAdded > 0 || projsAdded > 0) {
+    log('👉 Open index.html — the new projects appear in the Dashboard and Task Board.');
+  }
+}
+</script>
+</body>
+</html>

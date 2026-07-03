@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../sem2/CODE"
+		},
+		{
+			"path": "../../Data Viz"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"iostream": "cpp"
+		},
+		"java.debug.settings.onBuildFailureProceed": true,
+		"liveServer.settings.multiRootWorkspaceName": "Data Viz"
+	}
+}
